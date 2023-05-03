@@ -2,6 +2,8 @@
 
 mod ast;
 mod combinators;
+mod lexer;
+mod token;
 
 use nom::{
     branch::alt, bytes::complete::take_while1, character::complete::alpha1, combinator::opt,
@@ -71,6 +73,7 @@ fn parse_function(input: &str) -> IResult<&str, Definition, ErrorTree<&str>> {
 mod tests {
     use super::*;
     use cool_asserts::assert_matches;
+    use nom_supreme::error::GenericErrorTree;
 
     #[test]
     fn functions() {
@@ -90,7 +93,7 @@ mod tests {
 
     #[test]
     fn fn_no_params_and_empty_body() {
-        let src = "f = () => {}";
+        let src = "f = {}";
         assert_eq!(
             assert_matches!(
                 parse_function(src),
