@@ -4,36 +4,14 @@ mod ast;
 mod combinators;
 
 use nom::{
-    branch::alt,
-    bytes::complete::take_while1,
-    character::complete::{alpha1, char},
-    combinator::opt,
-    multi::separated_list0,
-    sequence::delimited,
-    IResult, Parser,
+    branch::alt, bytes::complete::take_while1, character::complete::alpha1, combinator::opt,
+    multi::separated_list0, sequence::delimited, IResult, Parser,
 };
 use nom_supreme::parser_ext::ParserExt;
-use nom_supreme::{
-    error::{ErrorTree, GenericErrorTree},
-    tag::complete::tag,
-};
+use nom_supreme::{error::ErrorTree, tag::complete::tag};
 
-use crate::parser::combinators::optional_space_delim;
-
-#[derive(Debug)]
-pub enum Definition<'a> {
-    TypeDefinition,
-    FunctionDefinition {
-        ident: &'a str,
-        parameters: Vec<&'a str>,
-        body: Expression,
-    },
-}
-
-#[derive(Debug)]
-pub enum Expression {
-    Unit,
-}
+use ast::{Definition, Expression};
+use combinators::optional_space_delim;
 
 fn is_valid_ident_char(inp: char) -> bool {
     inp.is_alphanumeric() || inp == '_' || inp == '\''
