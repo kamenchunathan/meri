@@ -1,0 +1,63 @@
+-- ------------------------------------ Data Definitions -------------------------------
+-- definition of enums
+
+-- no constructor
+type Void = {}
+
+-- single constructor
+type Unit = { Unit }
+
+-- multiple constructors
+type Weekdays = {
+  Monday,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday,
+}
+
+-- enum constructors with data
+type Color = {
+  Rgb(Int, Int, Int),
+  Hsv {a: Int, b: Int, c: Int},
+}
+
+-- Generic arguments
+union Option<T> = {
+  Some(a),
+  None
+}
+
+
+
+-- Multiple generic arguments
+type Either<a, b> = {
+  Left(a),
+  Right(b),
+}
+
+record Wow =
+  { first_name: String
+  , userne: String
+  , age: Int
+  }
+
+--  Structs
+struct Rect<a> = {
+  size: Int,
+  length: a
+}
+
+-- newtype-ish
+type NewRect a = { NewRect Rect }
+
+-- more functions
+maybe_int: Option<Int> = { Option::Some 0 } 
+
+-- some_rect: Row { field }
+some_rect: Rect = {
+  { size    = 0 
+  , length  = 1
+  }
+}
+

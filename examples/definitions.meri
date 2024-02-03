@@ -1,59 +1,32 @@
-// definition of a value / function with no arguments
-hello_swahili: String { "Hujambo" }
+-- definition of a value / function with no arguments
+hello_swahili: String  = { "Hujambo" }
+hello_swahili = { "Shikamoo" }
 
-// function with one argument
+-- function with one argument
 square: x => Int = {
   x ^ 2
 }
 
-
+-- Single function with one argument and parentheses
+-- parentheses optional
 square: (x) => Int = {
   x ^ 2
 }
 
-// multiple arguments
+-- multiple arguments
 add: (a, b) => Int = {
   a + b
 }
 
-// multiple arguments typed
+-- multiple arguments typed
 add: (a: Int, b: Int) => Int = {
   a + b
 }
 
-// generic Generic arguments
-add: T. (a: T, b: T) => T = {
+-- Generic arguments and return types
+add : <T>(a: T, b: T) => T = {
   //.. do something
 }
 
 
-
-// ------------------------------------ Data Definitions -------------------------------
-// definition of enums
-type Unit = Unit
-
-type Option a = {
-  Some a,
-  None
-}
-
-alias Rect a = {
-  size: Int,
-  length: a
-}
-
-// newtype-ish
-type NewRect a = { NewRect Rect }
-
-
-
-// more functions
-maybe_int: Option Int = { Option::Some 0 } 
-
-// some_rect: Row { field }
-some_rect = {
-  { size    = 0 
-  , length  = 1
-  }
-}
 

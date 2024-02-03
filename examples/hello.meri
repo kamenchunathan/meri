@@ -1,0 +1,6 @@
+module Main exposing (meri)
+
+
+main : IO(Unit) = {
+  Stdio.print("Hello World")
+}

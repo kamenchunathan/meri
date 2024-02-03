@@ -1,6 +1,6 @@
-module Main exposing ()
+module Main exposing (main)
 
 
-main : IO () {
+main : IO () = {
   println("Hello World") 
 }
