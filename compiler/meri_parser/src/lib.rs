@@ -1,6 +1,5 @@
 #![allow(unused)]
 
-mod ast;
 mod combinators;
 mod lexer;
 mod token;
@@ -12,7 +11,8 @@ use nom::{
 use nom_supreme::parser_ext::ParserExt;
 use nom_supreme::{error::ErrorTree, tag::complete::tag};
 
-use ast::{Definition, Expression};
+use meri_ast::{Definition, Expression};
+
 use combinators::optional_space_delim;
 
 fn is_valid_ident_char(inp: char) -> bool {

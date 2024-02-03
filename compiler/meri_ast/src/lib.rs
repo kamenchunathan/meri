@@ -3,11 +3,11 @@
 #[derive(Debug)]
 pub struct ModuleHeader {
     /// module name
-    name: String,
+    pub name: String,
 
     // TODO: think about how to handle the imports and exports
     /// imports of the module, Currently not implemented
-    imports: Vec<()>,
+    pub imports: (),
 }
 
 /// The two types of modules in the language and information specific to each
@@ -29,9 +29,9 @@ pub enum ModuleType<'a> {
 /// environment of the code and
 #[derive(Debug)]
 pub struct Module<'a> {
-    header: ModuleHeader,
-    type_: ModuleType<'a>,
-    definitions: Vec<Definition<'a>>,
+    pub header: ModuleHeader,
+    pub typ: ModuleType<'a>,
+    pub definitions: Vec<Definition<'a>>,
 }
 
 /// A defintion of a type, type alias or a function

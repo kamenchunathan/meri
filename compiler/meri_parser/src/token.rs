@@ -13,6 +13,7 @@ pub enum Token<'a> {
     String(&'a str),
     /// Token for Comments. These will be filtered out during lexing
     Comment(&'a str),
+
     /// Token for a left parenthesis `(`
     Lparen,
     /// Token for a right parenthesis `)`
@@ -23,6 +24,7 @@ pub enum Token<'a> {
     LBrace,
     /// Token for a right braces `}`
     RBrace,
+
     /// Token for a Fat arrow `=>`
     FatArrow,
     /// Token for a single equal sign `=`
@@ -39,6 +41,12 @@ pub enum Token<'a> {
     Star,
     /// Token for the slash  `/`
     Slash,
+
+    // Keywords
+    /// Token for the `type` keyword
+    Type,
+    /// Token for the `alias` keyword
+    TypeAlias,
 }
 
 impl<'a> Display for Token<'a> {
@@ -97,6 +105,12 @@ impl<'a> Display for Token<'a> {
             }
             Token::Slash => {
                 write!(f, "/")
+            }
+            Token::Type => {
+                write!(f, "type")
+            }
+            Token::TypeAlias => {
+                write!(f, "alias")
             }
         }
     }

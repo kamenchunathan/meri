@@ -4,11 +4,4 @@ version = "0.0.1"
 edition = "2021"
 
 [workspace]
-members = ["compiler", "repl"]
-
-[dependencies]
-nom = { version = "7.1.3", features = ["alloc"] }
-nom-supreme = "0.8.0"
-
-[dev-dependencies]
-cool_asserts = "2.0.3"
+members = ["compiler/meri_ast", "compiler/meri_parser", "repl"]

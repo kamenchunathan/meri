@@ -1,0 +1,12 @@
+[package]
+name = "meri_parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+meri_ast = { path = "../meri_ast" }
+nom = { version = "7.1.3", features = ["alloc"] }
+nom-supreme = "0.8.0"
+
+[dev-dependencies]
+cool_asserts = "2.0.3"
