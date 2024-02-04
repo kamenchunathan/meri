@@ -1,16 +1,25 @@
-use std::fmt::Display;
+use std::fmt::{write, Display};
 
-/// This is a list of all the tokens that are recognized in the Meri language
-#[derive(Debug)]
-pub enum Token<'a> {
+use crate::span::Span;
+
+/// A representation of a token
+#[derive(Debug, PartialEq)]
+pub struct Token<'a> {
+    pub typ: TokenType<'a>,
+    pub span: Span,
+}
+
+/// A set of all the tokens that are recognized in the Meri language
+#[derive(Debug, PartialEq)]
+pub enum TokenType<'a> {
     /// An identifier. The value for a name
     Ident(&'a str),
     /// Token for an Integer
-    Integer(i64),
+    IntegerLit(i64),
     /// Token for floating point number
-    Number(f64),
+    FloatLit(f64),
     /// Token for a string literal, represented as a set of characters delimited by quotes
-    String(&'a str),
+    StringLit(&'a str),
     /// Token for Comments. These will be filtered out during lexing
     Comment(&'a str),
 
@@ -24,9 +33,11 @@ pub enum Token<'a> {
     LBrace,
     /// Token for a right braces `}`
     RBrace,
+    /// Token for Left angle bracket / less than sign `<`
+    LAngleBracket,
+    /// Token for right angle bracket / grater than sign `>`
+    RAngleBracket,
 
-    /// Token for a Fat arrow `=>`
-    FatArrow,
     /// Token for a single equal sign `=`
     Equal,
     /// Token for a comma `,`
@@ -39,79 +50,120 @@ pub enum Token<'a> {
     Minus,
     /// Token for star sign `*`
     Star,
+    /// Token for percent sign `%`
+    Percent,
+    ///Token for a vertical bar '|'
+    Vbar,
+    ///Token for an ampersand '&'
+    Amper,
+    ///Token for logical not '!'
+    Exclam,
+
     /// Token for the slash  `/`
     Slash,
+    /// Token for the slash  `\`
+    BackSlash,
 
     // Keywords
     /// Token for the `type` keyword
     Type,
     /// Token for the `alias` keyword
     TypeAlias,
+
+    /// EOF
+    // Not a token but should signal the end of parsing
+    EOF,
 }
 
-impl<'a> Display for Token<'a> {
+impl<'a> Display for TokenType<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use TokenType::*;
+
         match self {
-            Token::Ident(ident) => {
+            Ident(ident) => {
                 write!(f, "{ident}")
             }
-            Token::Integer(int) => {
+            IntegerLit(int) => {
                 write!(f, "{int}")
             }
-            Token::Number(num) => {
+            FloatLit(num) => {
                 write!(f, "{num}")
             }
-            Token::String(val) => {
+            StringLit(val) => {
                 write!(f, "\"{val}\"")
             }
-            Token::Comment(comment) => {
+            Comment(comment) => {
                 write!(f, "\"{comment}\"")
             }
-            Token::Lparen => {
+
+            Lparen => {
                 write!(f, "(")
             }
-            Token::RParen => {
+            RParen => {
                 write!(f, ")")
             }
-            Token::Colon => {
+            Colon => {
                 write!(f, ":")
             }
-            Token::LBrace => {
+            LBrace => {
                 write!(f, "{{")
             }
-            Token::RBrace => {
+            RBrace => {
                 write!(f, "}}")
             }
-            Token::FatArrow => {
-                write!(f, "=>")
+            LAngleBracket => {
+                write!(f, "<")
             }
-            Token::Equal => {
+            RAngleBracket => {
+                write!(f, ">")
+            }
+
+            Equal => {
                 write!(f, "=")
             }
-            Token::Comma => {
+            Comma => {
                 write!(f, ",")
             }
-            Token::Dot => {
+            Dot => {
                 write!(f, ".")
             }
-            Token::Plus => {
+            Plus => {
                 write!(f, "+")
             }
-            Token::Minus => {
+            Minus => {
                 write!(f, "-")
             }
-            Token::Star => {
+            Star => {
                 write!(f, "*")
             }
-            Token::Slash => {
+            Percent => {
+                write!(f, "%")
+            }
+            Vbar => {
+                write!(f, "|")
+            }
+            Amper => {
+                write!(f, "&")
+            }
+
+            Exclam => {
+                write!(f, "!")
+            }
+
+            Slash => {
                 write!(f, "/")
             }
-            Token::Type => {
+
+            BackSlash => write!(f, "\\"),
+
+            Type => {
                 write!(f, "type")
             }
-            Token::TypeAlias => {
+            TypeAlias => {
                 write!(f, "alias")
             }
+
+            EOF => write!(f, "EOF"),
         }
     }
 }

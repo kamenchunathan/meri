@@ -2,6 +2,7 @@
 
 mod combinators;
 mod lexer;
+mod span;
 mod token;
 
 use nom::{
