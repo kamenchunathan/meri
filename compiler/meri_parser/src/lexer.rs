@@ -7,8 +7,22 @@ use crate::{span::Span, token::Token};
 use super::token::TokenType;
 
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
-    todo!();
-    [].into_iter()
+    let mut lexer = Lexer::new(input);
+    let mut done = false;
+
+    std::iter::from_fn(move || {
+        if done {
+            None
+        } else {
+            match lexer.advance_token() {
+                t if t.typ == TokenType::EOF => {
+                    done = true;
+                    Some(t)
+                }
+                t => Some(t),
+            }
+        }
+    })
 }
 
 #[derive(Debug)]
@@ -48,7 +62,7 @@ impl<'a> Lexer<'a> {
         self.idx - 1
     }
 
-    fn advance_token(&mut self) -> Token<'_> {
+    fn advance_token(&mut self) -> Token<'a> {
         loop {
             let Some(next) = self.advance_char() else {
                 return Token {
@@ -245,7 +259,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn consume_comment(&mut self) -> Token {
+    fn consume_comment(&mut self) -> Token<'a> {
         let start = self.tok_id();
         while let Some(c) = self.peek_char() {
             if c != '\n' {
@@ -261,7 +275,7 @@ impl<'a> Lexer<'a> {
         };
     }
 
-    fn consume_number(&mut self) -> Token {
+    fn consume_number(&mut self) -> Token<'a> {
         let start = self.tok_id();
         let mut found_decimal_point = false;
 
