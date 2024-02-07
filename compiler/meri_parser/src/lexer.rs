@@ -1,10 +1,9 @@
 use std::{iter::Peekable, marker::PhantomData, str::Chars};
 
-use nom::AsChar;
-
-use crate::{span::Span, token::Token};
-
-use super::token::TokenType;
+use crate::{
+    span::Span,
+    token::{Token, TokenType},
+};
 
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
     let mut lexer = Lexer::new(input);
@@ -328,7 +327,7 @@ impl<'a> Lexer<'a> {
 }
 
 fn is_valid_ident_char(c: char) -> bool {
-    c.is_alphanum() || c == '_'
+    c.is_alphanumeric() || c == '_'
 }
 
 #[cfg(test)]
