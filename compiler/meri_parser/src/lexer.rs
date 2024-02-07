@@ -78,56 +78,56 @@ impl<'a> Lexer<'a> {
                 '(' => {
                     return Token {
                         typ: TokenType::Lparen,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 ')' => {
                     return Token {
                         typ: TokenType::RParen,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '{' => {
                     return Token {
                         typ: TokenType::LBrace,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '}' => {
                     return Token {
                         typ: TokenType::RBrace,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 ':' => {
                     return Token {
                         typ: TokenType::Colon,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 ',' => {
                     return Token {
                         typ: TokenType::Comma,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '.' => {
                     return Token {
                         typ: TokenType::Dot,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '+' => {
                     return Token {
                         typ: TokenType::Plus,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
@@ -144,77 +144,77 @@ impl<'a> Lexer<'a> {
 
                     return Token {
                         typ: TokenType::Minus,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
                 '*' => {
                     return Token {
                         typ: TokenType::Star,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '%' => {
                     return Token {
                         typ: TokenType::Percent,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '/' => {
                     return Token {
                         typ: TokenType::Lparen,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '\\' => {
                     return Token {
                         typ: TokenType::BackSlash,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     }
                 }
 
                 '=' => {
                     return Token {
                         typ: TokenType::Equal,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
                 '>' => {
                     return Token {
                         typ: TokenType::RAngleBracket,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
                 '<' => {
                     return Token {
                         typ: TokenType::LAngleBracket,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
                 '!' => {
                     return Token {
                         typ: TokenType::Exclam,
-                        span: Span::new(self.tok_id(), self.tok_id() + 1),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
                 '|' => {
                     return Token {
                         typ: TokenType::Vbar,
-                        span: Span::new(self.tok_id(), self.tok_id() + 2),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
                 '&' => {
                     return Token {
                         typ: TokenType::Amper,
-                        span: Span::new(self.tok_id(), self.tok_id() + 2),
+                        span: Span::new(self.tok_id(), self.tok_id()),
                     };
                 }
 
@@ -270,7 +270,7 @@ impl<'a> Lexer<'a> {
         }
 
         return Token {
-            typ: TokenType::Comment(&self.input[start..self.tok_id()]),
+            typ: TokenType::Comment(&self.input[start..self.tok_id() + 1]),
             span: Span::new(start, self.tok_id()),
         };
     }
@@ -331,18 +331,6 @@ fn is_valid_ident_char(c: char) -> bool {
     c.is_alphanum() || c == '_'
 }
 
-struct TokenIter<'a> {
-    dat: PhantomData<&'a ()>,
-}
-
-impl<'a> Iterator for TokenIter<'a> {
-    type Item = Token<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        todo!()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -398,98 +386,239 @@ mod tests {
     #[test]
     fn punctuation() {
         let inp = "<>!{}wow%&";
-        let mut lexer = Lexer::new(inp);
-
-        loop {
-            let tok = lexer.advance_token();
-            println!("{tok:?}");
-            if tok.typ == TokenType::EOF {
-                break;
-            }
-        }
-
-        assert!(false)
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [
+                Token {
+                    typ: TokenType::LAngleBracket,
+                    span: Span { start: 0, end: 0 }
+                },
+                Token {
+                    typ: TokenType::RAngleBracket,
+                    span: Span { start: 1, end: 1 }
+                },
+                Token {
+                    typ: TokenType::Exclam,
+                    span: Span { start: 2, end: 2 }
+                },
+                Token {
+                    typ: TokenType::LBrace,
+                    span: Span { start: 3, end: 3 }
+                },
+                Token {
+                    typ: TokenType::RBrace,
+                    span: Span { start: 4, end: 4 }
+                },
+                Token {
+                    typ: TokenType::Ident("wow"),
+                    span: Span { start: 5, end: 7 }
+                },
+                Token {
+                    typ: TokenType::Percent,
+                    span: Span { start: 8, end: 8 }
+                },
+                Token {
+                    typ: TokenType::Amper,
+                    span: Span { start: 9, end: 9 }
+                },
+            ]
+        );
     }
 
     #[test]
     fn negative_int() {
         let inp = "-23";
-        let mut lexer = Lexer::new(inp);
-
-        loop {
-            let tok = lexer.advance_token();
-            println!("{tok:?}");
-            if tok.typ == TokenType::EOF {
-                break;
-            }
-        }
-
-        assert!(false)
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [Token {
+                typ: TokenType::IntegerLit(-23),
+                span: Span { start: 0, end: 2 }
+            }]
+        );
     }
 
     #[test]
     fn positive_int() {
         let inp = "23";
-        let mut lexer = Lexer::new(inp);
-
-        loop {
-            let tok = lexer.advance_token();
-            println!("{tok:?}");
-            if tok.typ == TokenType::EOF {
-                break;
-            }
-        }
-
-        assert!(false)
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [Token {
+                typ: TokenType::IntegerLit(23),
+                span: Span { start: 0, end: 1 }
+            }]
+        );
     }
 
     #[test]
     fn negative_float() {
         let inp = "-23.9";
-        let mut lexer = Lexer::new(inp);
-
-        loop {
-            let tok = lexer.advance_token();
-            println!("{tok:?}");
-            if tok.typ == TokenType::EOF {
-                break;
-            }
-        }
-
-        assert!(false)
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [Token {
+                typ: TokenType::FloatLit(-23.9),
+                span: Span { start: 0, end: 4 }
+            }]
+        );
     }
 
     #[test]
     fn positive_float() {
         let inp = "23.3";
-        let mut lexer = Lexer::new(inp);
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [Token {
+                typ: TokenType::FloatLit(23.3),
+                span: Span { start: 0, end: 3 }
+            }]
+        );
+    }
 
-        loop {
-            let tok = lexer.advance_token();
-            println!("{tok:?}");
-            if tok.typ == TokenType::EOF {
-                break;
-            }
-        }
-
-        assert!(false)
+    #[test]
+    fn func() {
+        let inp = r#"sum = (a: Int, b: Int) => { a + b }"#;
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [
+                Token {
+                    typ: TokenType::Ident("sum"),
+                    span: Span { start: 0, end: 2 },
+                },
+                Token {
+                    typ: TokenType::Equal,
+                    span: Span { start: 4, end: 4 },
+                },
+                Token {
+                    typ: TokenType::Lparen,
+                    span: Span { start: 6, end: 6 },
+                },
+                Token {
+                    typ: TokenType::Ident("a"),
+                    span: Span { start: 7, end: 7 },
+                },
+                Token {
+                    typ: TokenType::Colon,
+                    span: Span { start: 8, end: 8 },
+                },
+                Token {
+                    typ: TokenType::Ident("Int"),
+                    span: Span { start: 10, end: 12 },
+                },
+                Token {
+                    typ: TokenType::Comma,
+                    span: Span { start: 13, end: 13 },
+                },
+                Token {
+                    typ: TokenType::Ident("b"),
+                    span: Span { start: 15, end: 15 },
+                },
+                Token {
+                    typ: TokenType::Colon,
+                    span: Span { start: 16, end: 16 },
+                },
+                Token {
+                    typ: TokenType::Ident("Int"),
+                    span: Span { start: 18, end: 20 },
+                },
+                Token {
+                    typ: TokenType::RParen,
+                    span: Span { start: 21, end: 21 },
+                },
+                Token {
+                    typ: TokenType::Equal,
+                    span: Span { start: 23, end: 23 },
+                },
+                Token {
+                    typ: TokenType::RAngleBracket,
+                    span: Span { start: 24, end: 24 },
+                },
+                Token {
+                    typ: TokenType::LBrace,
+                    span: Span { start: 26, end: 26 },
+                },
+                Token {
+                    typ: TokenType::Ident("a"),
+                    span: Span { start: 28, end: 28 },
+                },
+                Token {
+                    typ: TokenType::Plus,
+                    span: Span { start: 30, end: 30 },
+                },
+                Token {
+                    typ: TokenType::Ident("b"),
+                    span: Span { start: 32, end: 32 },
+                },
+                Token {
+                    typ: TokenType::RBrace,
+                    span: Span { start: 34, end: 34 },
+                },
+            ]
+        );
     }
 
     #[test]
     fn comments() {
         let inp = r#"-- TODO: Add parsing for numbers
-        parse = (x: String) => { } 
-        "#;
-        let mut lexer = Lexer::new(inp);
+parse = (x: String) => { }"#;
+        let tokens = tokenize(inp).collect::<Vec<_>>();
 
-        loop {
-            let tok = lexer.advance_token();
-            println!("{tok:?}");
-            if tok.typ == TokenType::EOF {
-                break;
-            }
-        }
-
-        assert!(false)
+        assert_eq!(
+            tokens[0..tokens.len() - 1],
+            [
+                Token {
+                    typ: TokenType::Comment("-- TODO: Add parsing for numbers"),
+                    span: Span { start: 0, end: 31 }
+                },
+                Token {
+                    typ: TokenType::Ident("parse"),
+                    span: Span { start: 33, end: 37 }
+                },
+                Token {
+                    typ: TokenType::Equal,
+                    span: Span { start: 39, end: 39 }
+                },
+                Token {
+                    typ: TokenType::Lparen,
+                    span: Span { start: 41, end: 41 }
+                },
+                Token {
+                    typ: TokenType::Ident("x"),
+                    span: Span { start: 42, end: 42 }
+                },
+                Token {
+                    typ: TokenType::Colon,
+                    span: Span { start: 43, end: 43 }
+                },
+                Token {
+                    typ: TokenType::Ident("String"),
+                    span: Span { start: 45, end: 50 }
+                },
+                Token {
+                    typ: TokenType::RParen,
+                    span: Span { start: 51, end: 51 }
+                },
+                Token {
+                    typ: TokenType::Equal,
+                    span: Span { start: 53, end: 53 }
+                },
+                Token {
+                    typ: TokenType::RAngleBracket,
+                    span: Span { start: 54, end: 54 }
+                },
+                Token {
+                    typ: TokenType::LBrace,
+                    span: Span { start: 56, end: 56 }
+                },
+                Token {
+                    typ: TokenType::RBrace,
+                    span: Span { start: 58, end: 58 }
+                },
+            ]
+        );
     }
 }
