@@ -1,113 +1,213 @@
 #![allow(unused)]
 
-mod combinators;
+use meri_ast::{Definition, Expression, FunctionSignature, Ident, Pattern, TypePath};
+use nom::{
+    bytes::complete::tag,
+    combinator::{map, opt},
+    error::{ErrorKind, ParseError},
+    multi::separated_list1,
+    sequence::delimited,
+    IResult, Parser,
+};
+use nom_supreme::ParserExt;
+
+use crate::{
+    span::Span,
+    token::{Token, TokenType},
+};
+
 mod lexer;
 mod span;
 mod token;
 
-use nom::{
-    branch::alt, bytes::complete::take_while1, character::complete::alpha1, combinator::opt,
-    multi::separated_list0, sequence::delimited, IResult, Parser,
-};
-use nom_supreme::parser_ext::ParserExt;
-use nom_supreme::{error::ErrorTree, tag::complete::tag};
-
-use meri_ast::{Definition, Expression};
-
-use combinators::optional_space_delim;
-
-fn is_valid_ident_char(inp: char) -> bool {
-    inp.is_alphanumeric() || inp == '_' || inp == '\''
-}
-
-/// Parses a valid identifer in the meri language
-///
-/// A valid identifier starts with an underscore or letter
-/// and contains alphabetic characters, numbers, underscores
-/// or the apostrophe
-fn parse_ident(input: &str) -> IResult<&str, &str, ErrorTree<&str>> {
-    alt((alpha1, tag("_")))
-        .context("First Character of an an identifier")
-        .parse(input)?;
-    let (input, ident) = take_while1(is_valid_ident_char)(input)?;
-
-    Ok((input, ident))
-}
-
-/// Parses an expression
-fn expression(input: &str) -> IResult<&str, Expression, ErrorTree<&str>> {
-    opt(optional_space_delim(tag("void")))(input).map(|(inp, res)| {
-        (
-            inp,
-            res.map(|_| Expression::Unit).unwrap_or(Expression::Unit),
-        )
-    })
-}
-
-fn function_body(input: &str) -> IResult<&str, Expression, ErrorTree<&str>> {
-    delimited(tag("{"), expression, tag("}"))(input)
-}
-
-fn parse_function(input: &str) -> IResult<&str, Definition, ErrorTree<&str>> {
-    let (input, ident) = parse_ident(input)?;
-    let (input, _) = optional_space_delim(tag("="))(input)?;
-    let (input, parameters) = delimited(
-        tag("("),
-        // TODO: add support for annotating types of parameters
-        separated_list0(tag(","), optional_space_delim(parse_ident)),
-        tag(")"),
+fn parse_function_definition<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], Definition<'b>, nom::error::Error<&'a [Token<'b>]>> {
+    // FunctionDefinition {
+    //     ident: &'a str,
+    //     parameters: Vec<&'a str>,
+    //     body: Expression,
+    // },
+    let (input, ident) = ident(input)?;
+    let (input, sig) = parse_function_signature(input)?;
+    let (input, _) = token_type(TokenType::Equal)(input)?;
+    let (input, body) = delimited(
+        token_type(TokenType::LBrace),
+        parse_expr,
+        token_type(TokenType::RBrace),
     )(input)?;
-    let (input, _) = optional_space_delim(tag("=>"))(input)?;
-    let (input, body) = optional_space_delim(function_body)(input)?;
+
+    Ok((input, Definition::FunctionDefinition { ident, sig, body }))
+}
+
+// TODO: actually parse expressions
+fn parse_expr<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], Expression, nom::error::Error<&'a [Token<'b>]>> {
+    map(ident, |_| Expression::Unit)(input)
+}
+
+fn parse_function_parameter<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], (Pattern<'b>, Option<TypePath<'b>>), nom::error::Error<&'a [Token<'b>]>>
+{
+    let (input, pattern) = parse_pattern(input)?;
+    let Ok((input, _)) = token_type(TokenType::Colon)(input) else {
+        return Ok((input, (pattern, None)));
+    };
+    let (input, typ_path) = parse_type_path(input)?;
+
+    Ok((input, (pattern, Some(typ_path))))
+}
+
+fn parse_function_inputs<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<
+    &'a [Token<'b>],
+    Vec<(Pattern<'b>, Option<TypePath<'b>>)>,
+    nom::error::Error<&'a [Token<'b>]>,
+> {
+    delimited(
+        token_type(TokenType::Lparen),
+        separated_list1(token_type(TokenType::Comma), parse_function_parameter),
+        token_type(TokenType::RParen),
+    )(input)
+}
+
+fn parse_function_signature<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], FunctionSignature<'b>, nom::error::Error<&'a [Token<'b>]>> {
+    let (input, _) = token_type(TokenType::Colon)(input)?;
+    let (input, func_inputs) = parse_function_inputs(input)?;
+    // println!("{input:#?}\n\n\n\n\n\n");
+    let (input, _) = token_type(TokenType::Equal)(input)?;
+    let (input, _) = token_type(TokenType::RAngleBracket)(input)?;
+    let (input, return_type) = parse_type_path(input)?;
 
     Ok((
         input,
-        Definition::FunctionDefinition {
-            ident,
-            parameters,
-            body,
+        FunctionSignature {
+            inputs: func_inputs,
+            return_type,
         },
     ))
 }
 
+// TODO: only parses as identifiers currently. Add other items like generics etc.
+fn parse_type_path<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], TypePath<'b>, nom::error::Error<&'a [Token<'b>]>> {
+    map(ident, |ident| TypePath { ident })(input)
+}
+
+/// A  pattern used in match statements and in binding fucntion arguments
+// TODO: currently only handles binding to a name and not destructuring
+//      add destructuring and biding with more complex pattern matching
+fn parse_pattern<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], Pattern<'b>, nom::error::Error<&'a [Token<'b>]>> {
+    map(ident, |b| Pattern::Binding(b))(input)
+}
+
+fn token_type<'a, 'b: 'a>(
+    tok_typ: TokenType<'_>,
+) -> impl Fn(
+    &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], Token<'b>, nom::error::Error<&'a [Token<'b>]>>
+       + '_ {
+    return move |input| match input.split_first() {
+        None => Err(nom::Err::Error(nom::error::Error::from_error_kind(
+            input,
+            nom::error::ErrorKind::Eof,
+        ))),
+
+        Some((t @ Token { typ, .. }, rest)) if *typ == tok_typ => Ok((rest, *t)),
+
+        Some((t, rest)) => Err(nom::Err::Error(nom::error::Error::from_error_kind(
+            input,
+            ErrorKind::Tag,
+        ))),
+    };
+}
+
+fn ident<'a, 'b>(
+    input: &'a [Token<'b>],
+) -> IResult<&'a [Token<'b>], Ident<'b>, nom::error::Error<&'a [Token<'b>]>> {
+    match input.split_first() {
+        None => Err(nom::Err::Error(nom::error::Error::from_error_kind(
+            input,
+            nom::error::ErrorKind::Eof,
+        ))),
+
+        Some((
+            Token {
+                typ: TokenType::Ident(ident),
+                ..
+            },
+            rest,
+        )) => Ok((rest, Ident(ident))),
+
+        Some((t, rest)) => Err(nom::Err::Error(nom::error::Error::from_error_kind(
+            input,
+            ErrorKind::Tag,
+        ))),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::lexer::tokenize;
+
     use super::*;
-    use cool_asserts::assert_matches;
-    use nom_supreme::error::GenericErrorTree;
 
     #[test]
-    fn functions() {
-        let empty_function = "func = () => {}";
+    fn func_def_with_single_input_and_return() {
+        let tokens = tokenize("id : (x: Number)  => Number =  { x }").collect::<Vec<_>>();
+        let res = parse_function_definition(&tokens);
+
+        println!("{res:#?}");
+        assert!(false);
     }
 
     #[test]
-    fn ident_parses() {
-        assert_matches!(parse_ident("wow"), Ok(("", "wow")));
-        assert_matches!(parse_ident("_ping"), Ok(("", "_ping")));
-        assert_matches!(parse_ident("_ping'"), Ok(("", "_ping'")));
-        assert_matches!(
-            parse_ident("3ping"),
-            Err(nom::Err::Error(GenericErrorTree::Stack { .. }))
-        );
+    fn parse_func_def() {
+        let tokens =
+            tokenize("add : (x: Number, y: Number ) => Number =  { x }").collect::<Vec<_>>();
+        let res = parse_function_definition(&tokens);
+
+        println!("{res:#?}");
+        assert!(false);
     }
 
     #[test]
-    fn fn_no_params_and_empty_body() {
-        let src = "f = {}";
-        assert_eq!(
-            assert_matches!(
-                parse_function(src),
-                Ok((
-                    "",
-                    Definition::FunctionDefinition {
-                        ident: "f",
-                        parameters,
-                        body: Expression::Unit
-                    }
-                )) => parameters
-            ),
-            Vec::<&str>::new()
-        )
+    fn func_param_parsing() {
+        let tokens: Vec<_> = tokenize(" x => String ").collect();
+        let res = parse_function_inputs(&tokens);
+        println!("{res:#?}");
+        assert!(false);
+    }
+
+    #[test]
+    fn multiple_func_param_without_typepath() {
+        let tokens: Vec<_> = tokenize(" x, y  = ").collect();
+        let res = parse_function_inputs(&tokens);
+        println!("{res:#?}");
+        assert!(false);
+    }
+
+    #[test]
+    fn func_param_without_typepath() {
+        let tokens: Vec<_> = tokenize(" x, y  = ").collect();
+        let res = parse_function_parameter(&tokens);
+        println!("{res:#?}");
+        assert!(false);
+    }
+
+    #[test]
+    fn func_signature_with_types() {
+        let tokens: Vec<_> = tokenize(": x  => String = {}").collect();
+        let res = parse_function_signature(&tokens);
+        println!("{res:#?}");
+        assert!(false);
     }
 }

@@ -1,16 +1,18 @@
 use std::fmt::{write, Display};
 
+use nom::InputTake;
+
 use crate::span::Span;
 
 /// A representation of a token
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Token<'a> {
     pub typ: TokenType<'a>,
     pub span: Span,
 }
 
 /// A set of all the tokens that are recognized in the Meri language
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType<'a> {
     /// An identifier. The value for a name
     Ident(&'a str),

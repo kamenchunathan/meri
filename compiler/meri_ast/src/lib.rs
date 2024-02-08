@@ -40,13 +40,49 @@ pub struct Module<'a> {
 pub enum Definition<'a> {
     TypeDefinition,
     FunctionDefinition {
-        ident: &'a str,
-        parameters: Vec<&'a str>,
+        ident: Ident<'a>,
+        sig: FunctionSignature<'a>,
         body: Expression,
     },
 }
 
+#[derive(Debug)]
+pub struct FunctionSignature<'a> {
+    pub inputs: Vec<(Pattern<'a>, Option<TypePath<'a>>)>,
+    pub return_type: TypePath<'a>,
+}
+
+#[derive(Debug)]
+pub struct TypePath<'a> {
+    pub ident: Ident<'a>,
+}
+/// A pattern used for matching against.
+/// All arguments of a function are patterns to allow destructuring of records and
+/// enums in function definitions
+/// e.g.
+/// ```meri
+///    brighten  : ( { r, g, b }: Color, intensity: Int ) => Color = {
+///        ...
+///    }
+/// ```
+// TODO: flesh out this value
+#[derive(Debug)]
+pub enum Pattern<'a> {
+    /// A simple binding of the a value to a variable name
+    Binding(Ident<'a>),
+
+    /// A variant of an enum
+    DataVariant,
+
+    /// Destructuring record fields
+    Record,
+}
+
+#[derive(Debug)]
+pub struct Ident<'a>(pub &'a str);
+
 /// Type that may be evaluated to a simpler value
+// TODO: fill out
 #[derive(Debug)]
 pub enum Expression {
     Unit,
