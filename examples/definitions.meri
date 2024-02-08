@@ -7,6 +7,10 @@ square: x => Int = {
   x ^ 2
 }
 
+drop: x => Unit {
+  unit
+}
+
 -- Single function with one argument and parentheses
 -- parentheses optional
 square: (x) => Int = {
