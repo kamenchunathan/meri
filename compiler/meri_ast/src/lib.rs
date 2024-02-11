@@ -1,6 +1,6 @@
 /// Contains information about the module that must be present / known for
 /// every module
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ModuleHeader {
     /// module name
     pub name: String,
@@ -12,7 +12,8 @@ pub struct ModuleHeader {
 
 /// The two types of modules in the language and information specific to each
 /// This has to be constructed for evaluation to take place.
-#[derive(Debug)]
+
+#[derive(Debug, PartialEq)]
 pub enum ModuleType<'a> {
     /// A module meant to be the main module or another entrypoint to an
     /// executable. It contains a definition that serves as the entrypoint /
@@ -27,7 +28,7 @@ pub enum ModuleType<'a> {
 /// A module in the meri language.
 /// This is the top level structure that contains information about the
 /// environment of the code and
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Module<'a> {
     pub header: ModuleHeader,
     pub typ: ModuleType<'a>,
@@ -36,7 +37,7 @@ pub struct Module<'a> {
 
 /// A defintion of a type, type alias or a function
 /// only items allowed in a module
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Definition<'a> {
     TypeDefinition,
     FunctionDefinition {
@@ -46,13 +47,13 @@ pub enum Definition<'a> {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FunctionSignature<'a> {
-    pub inputs: Vec<(Pattern<'a>, Option<TypePath<'a>>)>,
+    pub params: Vec<(Pattern<'a>, Option<TypePath<'a>>)>,
     pub return_type: TypePath<'a>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TypePath<'a> {
     pub ident: Ident<'a>,
 }
@@ -66,7 +67,7 @@ pub struct TypePath<'a> {
 ///    }
 /// ```
 // TODO: flesh out this value
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Pattern<'a> {
     /// A simple binding of the a value to a variable name
     Binding(Ident<'a>),
@@ -78,12 +79,12 @@ pub enum Pattern<'a> {
     Record,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Ident<'a>(pub &'a str);
 
 /// Type that may be evaluated to a simpler value
 // TODO: fill out
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Unit,
 }
