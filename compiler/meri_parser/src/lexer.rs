@@ -2,7 +2,7 @@ use std::{iter::Peekable, marker::PhantomData, str::Chars};
 
 use crate::{
     span::Span,
-    token::{Token, TokenType},
+    token::{try_into_keyword, Token, TokenType},
 };
 
 pub fn tokenize(input: &str) -> impl Iterator<Item = Token> + '_ {
@@ -230,6 +230,13 @@ impl<'a> Lexer<'a> {
                         }
                     }
 
+                    if let Some(typ) = try_into_keyword(&self.input[start..=self.tok_id()]) {
+                        return Token {
+                            typ,
+                            span: Span::new(start, self.tok_id()),
+                        };
+                    }
+
                     return Token {
                         typ: TokenType::Ident(&self.input[start..=self.tok_id()]),
                         span: Span::new(start, self.tok_id()),
@@ -369,7 +376,7 @@ mod tests {
         assert_eq!(
             lexer.advance_token(),
             Token {
-                typ: TokenType::Ident("module"),
+                typ: TokenType::Module,
                 span: Span::new(0, 5)
             }
         );
@@ -382,6 +389,40 @@ mod tests {
         );
     }
 
+    #[test]
+    fn keywords() {
+        let inp = "module type typealias exposing import";
+        let tokens = tokenize(inp).collect::<Vec<_>>();
+        assert_eq!(
+            tokens,
+            [
+                Token {
+                    typ: TokenType::Module,
+                    span: Span::new(0, 5)
+                },
+                Token {
+                    typ: TokenType::Type,
+                    span: Span::new(7, 10)
+                },
+                Token {
+                    typ: TokenType::TypeAlias,
+                    span: Span::new(12, 20)
+                },
+                Token {
+                    typ: TokenType::Exposing,
+                    span: Span::new(22, 29)
+                },
+                Token {
+                    typ: TokenType::Import,
+                    span: Span::new(31, 36)
+                },
+                Token {
+                    typ: TokenType::EOF,
+                    span: Span::new(36, 36)
+                },
+            ]
+        );
+    }
     #[test]
     fn punctuation() {
         let inp = "<>!{}wow%&";

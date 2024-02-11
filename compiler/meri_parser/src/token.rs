@@ -4,6 +4,17 @@ use nom::InputTake;
 
 use crate::span::Span;
 
+pub fn try_into_keyword(i: &str) -> Option<TokenType> {
+    match i {
+        "type" => Some(TokenType::Type),
+        "typealias" => Some(TokenType::TypeAlias),
+        "module" => Some(TokenType::Module),
+        "exposing" => Some(TokenType::Exposing),
+        "import" => Some(TokenType::Import),
+        _ => None,
+    }
+}
+
 /// A representation of a token
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Token<'a> {
@@ -71,6 +82,12 @@ pub enum TokenType<'a> {
     Type,
     /// Token for the `alias` keyword
     TypeAlias,
+    /// Token for a `module` used for Module declaration
+    Module,
+    /// Token for `exposing` keyword used to export items for a module
+    Exposing,
+    /// `import` keyword for bringing items into scope
+    Import,
 
     /// EOF
     // Not a token but should signal the end of parsing
@@ -162,7 +179,16 @@ impl<'a> Display for TokenType<'a> {
                 write!(f, "type")
             }
             TypeAlias => {
-                write!(f, "alias")
+                write!(f, "typealias")
+            }
+            Module => {
+                write!(f, "module")
+            }
+            Exposing => {
+                write!(f, "exposing")
+            }
+            Import => {
+                write!(f, "import")
             }
 
             EOF => write!(f, "EOF"),
