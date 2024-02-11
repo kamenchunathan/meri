@@ -1,0 +1,16 @@
+module Functions exposing (..)
+
+PI : Number = { 3.142 }
+
+
+square : (x: Number) => Number {
+	x ^ 2
+}
+
+log : (base: Number, num: Number ) => Number {
+	math.log 2 3
+}
+
+apply: (init: Number, f: (Int) => Int, collection: Vec<Int>) => Number {
+	
+}
