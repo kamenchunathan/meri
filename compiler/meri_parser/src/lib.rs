@@ -2,6 +2,7 @@
 
 use meri_ast::{Definition, Expression, FunctionSignature, Ident, Pattern, TypePath};
 use nom::{
+    branch::alt,
     bytes::complete::tag,
     combinator::{map, opt},
     error::{ErrorKind, ParseError},
@@ -23,11 +24,6 @@ mod token;
 fn parse_function_definition<'a, 'b>(
     input: &'a [Token<'b>],
 ) -> IResult<&'a [Token<'b>], Definition<'b>, nom::error::Error<&'a [Token<'b>]>> {
-    // FunctionDefinition {
-    //     ident: &'a str,
-    //     parameters: Vec<&'a str>,
-    //     body: Expression,
-    // },
     let (input, ident) = ident(input)?;
     let (input, sig) = parse_function_signature(input)?;
     let (input, _) = token_type(TokenType::Equal)(input)?;
@@ -47,7 +43,7 @@ fn parse_expr<'a, 'b>(
     map(ident, |_| Expression::Unit)(input)
 }
 
-fn parse_function_parameter<'a, 'b>(
+fn parse_single_parameter<'a, 'b>(
     input: &'a [Token<'b>],
 ) -> IResult<&'a [Token<'b>], (Pattern<'b>, Option<TypePath<'b>>), nom::error::Error<&'a [Token<'b>]>>
 {
@@ -60,7 +56,7 @@ fn parse_function_parameter<'a, 'b>(
     Ok((input, (pattern, Some(typ_path))))
 }
 
-fn parse_function_inputs<'a, 'b>(
+fn parse_function_params<'a, 'b>(
     input: &'a [Token<'b>],
 ) -> IResult<
     &'a [Token<'b>],
@@ -69,7 +65,7 @@ fn parse_function_inputs<'a, 'b>(
 > {
     delimited(
         token_type(TokenType::Lparen),
-        separated_list1(token_type(TokenType::Comma), parse_function_parameter),
+        separated_list1(token_type(TokenType::Comma), parse_single_parameter),
         token_type(TokenType::RParen),
     )(input)
 }
@@ -78,19 +74,35 @@ fn parse_function_signature<'a, 'b>(
     input: &'a [Token<'b>],
 ) -> IResult<&'a [Token<'b>], FunctionSignature<'b>, nom::error::Error<&'a [Token<'b>]>> {
     let (input, _) = token_type(TokenType::Colon)(input)?;
-    let (input, func_inputs) = parse_function_inputs(input)?;
-    // println!("{input:#?}\n\n\n\n\n\n");
-    let (input, _) = token_type(TokenType::Equal)(input)?;
-    let (input, _) = token_type(TokenType::RAngleBracket)(input)?;
-    let (input, return_type) = parse_type_path(input)?;
 
-    Ok((
-        input,
-        FunctionSignature {
-            inputs: func_inputs,
-            return_type,
-        },
-    ))
+    let with_params = |input| {
+        let (input, func_params) = parse_function_params(input)?;
+        let (input, _) = token_type(TokenType::Equal)(input)?;
+        let (input, _) = token_type(TokenType::RAngleBracket)(input)?;
+        let (input, return_type) = parse_type_path(input)?;
+
+        Ok((
+            input,
+            FunctionSignature {
+                params: func_params,
+                return_type,
+            },
+        ))
+    };
+
+    let without_params = |input| {
+        let (input, return_type) = parse_type_path(input)?;
+
+        Ok((
+            input,
+            FunctionSignature {
+                params: Vec::new(),
+                return_type,
+            },
+        ))
+    };
+
+    alt((with_params, without_params))(input)
 }
 
 // TODO: only parses as identifiers currently. Add other items like generics etc.
@@ -161,53 +173,215 @@ mod tests {
     use super::*;
 
     #[test]
-    fn func_def_with_single_input_and_return() {
+    fn func_def_typed() {
         let tokens = tokenize("id : (x: Number)  => Number =  { x }").collect::<Vec<_>>();
         let res = parse_function_definition(&tokens);
 
-        println!("{res:#?}");
-        assert!(false);
+        assert_eq!(
+            res,
+            Ok((
+                &[Token {
+                    typ: TokenType::EOF,
+                    span: Span::new(35, 35)
+                }][..],
+                Definition::FunctionDefinition {
+                    ident: Ident("id"),
+                    sig: FunctionSignature {
+                        params: vec![(
+                            Pattern::Binding(Ident("x")),
+                            Some(TypePath {
+                                ident: Ident("Number")
+                            })
+                        )],
+                        return_type: TypePath {
+                            ident: Ident("Number")
+                        }
+                    },
+                    body: Expression::Unit
+                }
+            ))
+        )
     }
 
     #[test]
-    fn parse_func_def() {
-        let tokens =
-            tokenize("add : (x: Number, y: Number ) => Number =  { x }").collect::<Vec<_>>();
-        let res = parse_function_definition(&tokens);
-
-        println!("{res:#?}");
-        assert!(false);
+    fn func_single_param() {
+        let tokens: Vec<_> = tokenize("(x)").collect();
+        let res = parse_function_params(&tokens);
+        assert_eq!(
+            res,
+            Ok((
+                &[Token {
+                    typ: TokenType::EOF,
+                    span: Span::new(2, 2)
+                }][..],
+                vec![(Pattern::Binding(Ident("x")), None)]
+            ))
+        );
     }
 
     #[test]
-    fn func_param_parsing() {
-        let tokens: Vec<_> = tokenize(" x => String ").collect();
-        let res = parse_function_inputs(&tokens);
-        println!("{res:#?}");
-        assert!(false);
+    fn func_single_param_with_typepath() {
+        let tokens: Vec<_> = tokenize("(x: String)").collect();
+        let res = parse_function_params(&tokens);
+        assert_eq!(
+            res,
+            Ok((
+                &[Token {
+                    typ: TokenType::EOF,
+                    span: Span::new(10, 10)
+                }][..],
+                vec![(
+                    Pattern::Binding(Ident("x")),
+                    Some(TypePath {
+                        ident: Ident("String")
+                    })
+                )]
+            ))
+        );
     }
 
     #[test]
-    fn multiple_func_param_without_typepath() {
-        let tokens: Vec<_> = tokenize(" x, y  = ").collect();
-        let res = parse_function_inputs(&tokens);
-        println!("{res:#?}");
-        assert!(false);
+    fn func_mutliple_param() {
+        let tokens: Vec<_> = tokenize("(x, y, z)").collect();
+        let res = parse_function_params(&tokens);
+        assert_eq!(
+            res,
+            Ok((
+                &[Token {
+                    typ: TokenType::EOF,
+                    span: Span::new(8, 8)
+                }][..],
+                vec![
+                    (Pattern::Binding(Ident("x")), None),
+                    (Pattern::Binding(Ident("y")), None),
+                    (Pattern::Binding(Ident("z")), None)
+                ],
+            ))
+        );
     }
 
     #[test]
-    fn func_param_without_typepath() {
-        let tokens: Vec<_> = tokenize(" x, y  = ").collect();
-        let res = parse_function_parameter(&tokens);
-        println!("{res:#?}");
-        assert!(false);
+    fn func_mutliple_param_with_typepaths() {
+        let tokens: Vec<_> = tokenize("(x: Int, y: Int, z: Int)").collect();
+        let res = parse_function_params(&tokens);
+        assert_eq!(
+            res,
+            Ok((
+                &[Token {
+                    typ: TokenType::EOF,
+                    span: Span::new(23, 23)
+                }][..],
+                vec![
+                    (
+                        Pattern::Binding(Ident("x")),
+                        Some(TypePath {
+                            ident: Ident("Int")
+                        })
+                    ),
+                    (
+                        Pattern::Binding(Ident("y")),
+                        Some(TypePath {
+                            ident: Ident("Int")
+                        })
+                    ),
+                    (
+                        Pattern::Binding(Ident("z")),
+                        Some(TypePath {
+                            ident: Ident("Int")
+                        })
+                    )
+                ],
+            ))
+        );
     }
 
     #[test]
-    fn func_signature_with_types() {
-        let tokens: Vec<_> = tokenize(": x  => String = {}").collect();
+    fn func_sig_constant() {
+        let tokens: Vec<_> = tokenize(": String").collect();
+        let (tokens, signature) = parse_function_signature(&tokens).unwrap();
+        assert_eq!(
+            signature,
+            FunctionSignature {
+                params: vec![],
+                return_type: TypePath {
+                    ident: Ident("String")
+                }
+            }
+        );
+    }
+
+    #[test]
+    fn func_signature_with_return() {
+        let tokens: Vec<_> = tokenize(":(x) => String = {}").collect();
         let res = parse_function_signature(&tokens);
-        println!("{res:#?}");
-        assert!(false);
+        assert_eq!(
+            res,
+            Ok((
+                &[
+                    Token {
+                        typ: TokenType::Equal,
+                        span: Span { start: 15, end: 15 },
+                    },
+                    Token {
+                        typ: TokenType::LBrace,
+                        span: Span { start: 17, end: 17 },
+                    },
+                    Token {
+                        typ: TokenType::RBrace,
+                        span: Span { start: 18, end: 18 },
+                    },
+                    Token {
+                        typ: TokenType::EOF,
+                        span: Span { start: 18, end: 18 },
+                    },
+                ][..],
+                FunctionSignature {
+                    params: vec![(Pattern::Binding(Ident("x",)), None)],
+                    return_type: TypePath {
+                        ident: Ident("String",),
+                    },
+                },
+            ),)
+        );
+    }
+
+    #[test]
+    fn func_signature_typed_with_return() {
+        let tokens: Vec<_> = tokenize(":(x: String) => String = {}").collect();
+        let res = parse_function_signature(&tokens);
+        assert_eq!(
+            res,
+            Ok((
+                &[
+                    Token {
+                        typ: TokenType::Equal,
+                        span: Span { start: 23, end: 23 },
+                    },
+                    Token {
+                        typ: TokenType::LBrace,
+                        span: Span { start: 25, end: 25 },
+                    },
+                    Token {
+                        typ: TokenType::RBrace,
+                        span: Span { start: 26, end: 26 },
+                    },
+                    Token {
+                        typ: TokenType::EOF,
+                        span: Span { start: 26, end: 26 },
+                    },
+                ][..],
+                FunctionSignature {
+                    params: vec![(
+                        Pattern::Binding(Ident("x",)),
+                        Some(TypePath {
+                            ident: Ident("String")
+                        })
+                    )],
+                    return_type: TypePath {
+                        ident: Ident("String",),
+                    },
+                },
+            ),)
+        );
     }
 }
