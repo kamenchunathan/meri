@@ -7,8 +7,9 @@ A custom programming language designed by me
 # RoadMap
 - [x] Tokenization
     - [ ] String Literals
-    - [ ] Keywords
+    - [x] Keywords
 - [ ] Parsing
+    - [ ] Expressions
     - [ ] Definitions
-        - [ ] Function
+        - [x] Function
         - [ ] FunctionPatterns

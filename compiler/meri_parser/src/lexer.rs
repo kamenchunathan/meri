@@ -1,3 +1,4 @@
+use core::panic;
 use std::{iter::Peekable, marker::PhantomData, str::Chars};
 
 use crate::{
@@ -250,6 +251,11 @@ impl<'a> Lexer<'a> {
                     return self.consume_number();
                 }
 
+                // String literals
+                '"' => {
+                    panic!("Unhandled: Tokenization of string literals")
+                }
+
                 // Skip Whitespace
                 t if t.is_whitespace() => {
                     continue;
@@ -423,6 +429,7 @@ mod tests {
             ]
         );
     }
+
     #[test]
     fn punctuation() {
         let inp = "<>!{}wow%&";
